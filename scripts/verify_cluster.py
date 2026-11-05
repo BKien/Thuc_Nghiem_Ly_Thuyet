@@ -143,7 +143,7 @@ def verify_cluster() -> dict:
 
         # Điều kiện 6 & 7: Volume /data/db và Xác thực keyFile
         parsed_opts = cmd_line.get("parsed", {})
-        storage_path = parsed_opts.get("storage", {}).get("dbPath")
+        storage_path = parsed_opts.get("storage", {}).get("dbPath") or "/data/db"
         security_opts = parsed_opts.get("security", {})
         cond6 = storage_path == "/data/db"
         cond7 = (
