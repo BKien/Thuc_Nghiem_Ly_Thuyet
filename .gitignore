@@ -1,0 +1,20 @@
+# Thông tin bí mật và cấu hình cục bộ (Mục 9.6 & 10.1: không đưa vào báo cáo hoặc repo)
+.env
+config/keyfile/mongo-keyfile
+
+# Dữ liệu MongoDB cục bộ nếu mount thư mục
+data/
+
+# Python cache & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Log và kết quả chạy thử nghiệm tạm thời (giữ lại .gitkeep)
+logs/*
+!logs/.gitkeep
+results/*
+!results/.gitkeep

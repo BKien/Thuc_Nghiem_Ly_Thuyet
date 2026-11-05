@@ -1,0 +1,200 @@
+# ==============================================================================
+# DOCKER COMPOSE - MÔI TRƯỜNG THỰC NGHIỆM MONGODB REPLICA SET 3 NODE (rs0)
+# Thiết kế theo Chương 9 & Chương 10 (Mục 9.2, 9.3, 9.4, 9.5, 9.6, 10.2, 10.3)
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # NODE 1: Thành viên _id: 0, votes: 1, priority: 2 (Ưu tiên bầu làm Primary)
+  # ----------------------------------------------------------------------------
+  mongo1:
+    image: ${MONGO_IMAGE:-mongo:8.0.4}
+    container_name: mongo1
+    hostname: mongo1
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-cluster_admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-ClusterAdminSecret2026!}
+    entrypoint: ["/bin/bash", "/tmp/docker-entrypoint-keyfile.sh"]
+    command:
+      - "mongod"
+      - "--replSet"
+      - "${REPLICA_SET_NAME:-rs0}"
+      - "--bind_ip_all"
+      - "--port"
+      - "27017"
+      - "--wiredTigerCacheSizeGB"
+      - "${WIREDTIGER_CACHE_GB:-0.5}"
+      - "--oplogSize"
+      - "${OPLOG_SIZE_MB:-512}"
+      - "--auth"
+      - "--keyFile"
+      - "/etc/mongo-keyfile/mongo-keyfile"
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo1_data:/data/db
+      - mongo1_config:/data/configdb
+      - ./config/keyfile:/tmp/host-keyfile:ro
+      - ./config/docker-entrypoint-keyfile.sh:/tmp/docker-entrypoint-keyfile.sh:ro
+    networks:
+      - cluster_net
+    # Giới hạn tài nguyên mỗi node: 1 CPU và 2 GiB RAM (Mục 9.3 & 10.1)
+    cpus: 1.0
+    mem_limit: 2g
+
+  # ----------------------------------------------------------------------------
+  # NODE 2: Thành viên _id: 1, votes: 1, priority: 1 (Secondary dự phòng)
+  # ----------------------------------------------------------------------------
+  mongo2:
+    image: ${MONGO_IMAGE:-mongo:8.0.4}
+    container_name: mongo2
+    hostname: mongo2
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-cluster_admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-ClusterAdminSecret2026!}
+    entrypoint: ["/bin/bash", "/tmp/docker-entrypoint-keyfile.sh"]
+    command:
+      - "mongod"
+      - "--replSet"
+      - "${REPLICA_SET_NAME:-rs0}"
+      - "--bind_ip_all"
+      - "--port"
+      - "27017"
+      - "--wiredTigerCacheSizeGB"
+      - "${WIREDTIGER_CACHE_GB:-0.5}"
+      - "--oplogSize"
+      - "${OPLOG_SIZE_MB:-512}"
+      - "--auth"
+      - "--keyFile"
+      - "/etc/mongo-keyfile/mongo-keyfile"
+    ports:
+      - "127.0.0.1:27018:27017"
+    volumes:
+      - mongo2_data:/data/db
+      - mongo2_config:/data/configdb
+      - ./config/keyfile:/tmp/host-keyfile:ro
+      - ./config/docker-entrypoint-keyfile.sh:/tmp/docker-entrypoint-keyfile.sh:ro
+    networks:
+      - cluster_net
+    cpus: 1.0
+    mem_limit: 2g
+
+  # ----------------------------------------------------------------------------
+  # NODE 3: Thành viên _id: 2, votes: 1, priority: 1 (Secondary dự phòng)
+  # ----------------------------------------------------------------------------
+  mongo3:
+    image: ${MONGO_IMAGE:-mongo:8.0.4}
+    container_name: mongo3
+    hostname: mongo3
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-cluster_admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-ClusterAdminSecret2026!}
+    entrypoint: ["/bin/bash", "/tmp/docker-entrypoint-keyfile.sh"]
+    command:
+      - "mongod"
+      - "--replSet"
+      - "${REPLICA_SET_NAME:-rs0}"
+      - "--bind_ip_all"
+      - "--port"
+      - "27017"
+      - "--wiredTigerCacheSizeGB"
+      - "${WIREDTIGER_CACHE_GB:-0.5}"
+      - "--oplogSize"
+      - "${OPLOG_SIZE_MB:-512}"
+      - "--auth"
+      - "--keyFile"
+      - "/etc/mongo-keyfile/mongo-keyfile"
+    ports:
+      - "127.0.0.1:27019:27017"
+    volumes:
+      - mongo3_data:/data/db
+      - mongo3_config:/data/configdb
+      - ./config/keyfile:/tmp/host-keyfile:ro
+      - ./config/docker-entrypoint-keyfile.sh:/tmp/docker-entrypoint-keyfile.sh:ro
+    networks:
+      - cluster_net
+    cpus: 1.0
+    mem_limit: 2g
+
+  # ----------------------------------------------------------------------------
+  # NODE ĐỐI CHỨNG STANDALONE: Phục vụ Kịch bản 7 - Cấu hình P4 (Mục 9.2 & 11.7)
+  # Chạy độc lập ở lượt thử đối chứng với cùng phiên bản và giới hạn tài nguyên
+  # ----------------------------------------------------------------------------
+  mongo_standalone:
+    image: ${MONGO_IMAGE:-mongo:8.0.4}
+    container_name: mongo_standalone
+    hostname: mongo_standalone
+    profiles:
+      - standalone
+      - benchmark
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-cluster_admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-ClusterAdminSecret2026!}
+    command:
+      - "mongod"
+      - "--bind_ip_all"
+      - "--port"
+      - "27017"
+      - "--wiredTigerCacheSizeGB"
+      - "${WIREDTIGER_CACHE_GB:-0.5}"
+      - "--auth"
+    ports:
+      - "127.0.0.1:27020:27017"
+    volumes:
+      - mongo_standalone_data:/data/db
+    networks:
+      - cluster_net
+    cpus: 1.0
+    mem_limit: 2g
+
+  # ----------------------------------------------------------------------------
+  # CONTAINER CLIENT: Chứa mongosh, Python 3.12 + PyMongo 4.x + Script thử nghiệm
+  # Đặt cùng mạng nội bộ cluster_net để phân giải trực tiếp mongo1, mongo2, mongo3
+  # ----------------------------------------------------------------------------
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+      args:
+        PYTHON_IMAGE: ${PYTHON_IMAGE:-python:3.12-slim-bookworm}
+    container_name: cluster_client
+    hostname: cluster_client
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      RUNNING_IN_DOCKER: "true"
+    volumes:
+      - ./:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - cluster_net
+    depends_on:
+      - mongo1
+      - mongo2
+      - mongo3
+
+networks:
+  cluster_net:
+    name: cluster_net
+    driver: bridge
+
+volumes:
+  mongo1_data:
+    name: mongo1_data
+  mongo1_config:
+    name: mongo1_config
+  mongo2_data:
+    name: mongo2_data
+  mongo2_config:
+    name: mongo2_config
+  mongo3_data:
+    name: mongo3_data
+  mongo3_config:
+    name: mongo3_config
+  mongo_standalone_data:
+    name: mongo_standalone_data
